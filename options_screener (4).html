@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MC Options Screener</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #080b10; min-height: 100vh; }
+  body { color: #d4dbe8; font-family: 'Inter', sans-serif; font-size: 14px; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: #0c1018;
+    border-bottom: 1px solid #1e2736;
+    padding: 14px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 24px; }
+  .logo {
+    color: #f5a623; font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 16px; letter-spacing: 3px;
+  }
+  .logo span { color: #fff; }
+  .badge-live {
+    display: flex; align-items: center; gap: 6px;
+    background: #0d2218; border: 1px solid #1a4d2e;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; color: #3fb950; letter-spacing: 1px;
+  }
+  .dot-live { width: 6px; height: 6px; border-radius: 50%; background: #3fb950; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+  .topbar-right { display: flex; align-items: center; gap: 20px; }
+  .clock {
+    font-family: 'JetBrains Mono', monospace;
+    color: #f5a623; font-size: 15px; font-weight: 600; letter-spacing: 2px;
+  }
+  .last-update { color: #4a5568; font-size: 12px; }
+
+  /* ── MAIN LAYOUT ── */
+  .main { padding: 20px 28px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── CARD ── */
+  .card {
+    background: #0c1018; border: 1px solid #1e2736;
+    border-radius: 10px; overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 20px; border-bottom: 1px solid #1e2736;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card-header-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 2px;
+    color: #4a5568; text-transform: uppercase;
+  }
+  .card-body { padding: 18px 20px; }
+
+  /* ── API ROW ── */
+  .api-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .api-label { color: #6b7280; font-size: 12px; font-weight: 600; letter-spacing: 1px; white-space: nowrap; }
+  .api-input {
+    flex: 1; min-width: 280px;
+    background: #080b10; border: 1px solid #1e2736; border-radius: 8px;
+    color: #d4dbe8; padding: 10px 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .api-input:focus { outline: none; border-color: #f5a623; box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
+  .btn-run {
+    background: linear-gradient(135deg, #f5a623, #e8920f);
+    color: #080b10; border: none; border-radius: 8px;
+    padding: 10px 28px; font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    letter-spacing: 1px; white-space: nowrap;
+    transition: all 0.2s; box-shadow: 0 4px 12px rgba(245,166,35,0.3);
+  }
+  .btn-run:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(245,166,35,0.4); }
+  .btn-run:active { transform: translateY(0); }
+  .btn-run:disabled { background: #1e2736; color: #4a5568; box-shadow: none; transform: none; cursor: not-allowed; }
+  .api-hint { margin-top: 10px; color: #4a5568; font-size: 12px; }
+  .api-hint a { color: #60a5fa; text-decoration: none; }
+  .api-hint a:hover { text-decoration: underline; }
+
+  /* ── FILTERS ── */
+  .filters-grid { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
+  .filter-group { display: flex; flex-direction: column; gap: 6px; }
+  .filter-label { color: #6b7280; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .filter-row { display: flex; align-items: center; gap: 8px; }
+  .filter-input {
+    background: #080b10; border: 1px solid #1e2736; border-radius: 6px;
+    color: #f5a623; padding: 8px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600;
+    width: 70px; text-align: center; transition: border-color 0.2s;
+  }
+  .filter-input.wide { width: 90px; }
+  .filter-input:focus { outline: none; border-color: #f5a623; }
+  .filter-select {
+    background: #080b10; border: 1px solid #1e2736; border-radius: 6px;
+    color: #f5a623; padding: 8px 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: border-color 0.2s;
+  }
+  .filter-select:focus { outline: none; border-color: #f5a623; }
+  .filter-sep { color: #4a5568; font-size: 13px; }
+  .filter-unit { color: #6b7280; font-size: 12px; font-weight: 500; }
+  .btn-reset {
+    background: transparent; border: 1px solid #1e2736; border-radius: 6px;
+    color: #6b7280; padding: 8px 16px; font-size: 12px; font-weight: 600;
+    cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s; align-self: flex-end;
+  }
+  .btn-reset:hover { border-color: #4a5568; color: #d4dbe8; }
+
+  /* ── GEX NOTICE ── */
+  .gex-notice {
+    background: #0f1a0f; border: 1px solid #1a3a1a; border-left: 3px solid #e3b341;
+    border-radius: 8px; padding: 12px 18px;
+    font-size: 12px; color: #6b7280; line-height: 1.6;
+  }
+  .gex-notice strong { color: #e3b341; }
+  .gex-notice a { color: #60a5fa; text-decoration: none; }
+
+  /* ── PROGRESS ── */
+  .progress-wrap { border-radius: 4px; overflow: hidden; height: 3px; background: #1e2736; display: none; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg,#f5a623,#ffd166); width: 0%; transition: width 0.3s ease; }
+
+  /* ── INFO BAR ── */
+  .info-bar {
+    background: #0c1018; border: 1px solid #1e2736; border-radius: 8px;
+    padding: 10px 18px; font-size: 12px; color: #6b7280;
+    display: none; line-height: 1.5;
+  }
+
+  /* ── PANELS GRID ── */
+  .panels-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 1000px) { .panels-grid { grid-template-columns: 1fr; } }
+
+  /* ── PANEL ── */
+  .panel-card { background: #0c1018; border: 1px solid #1e2736; border-radius: 10px; overflow: hidden; }
+  .panel-header {
+    padding: 16px 20px; background: #080b10;
+    border-bottom: 1px solid #1e2736;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    color: #f5a623; font-weight: 700; font-size: 14px; letter-spacing: 2px;
+  }
+  .panel-badge {
+    background: #1e2736; border-radius: 20px;
+    padding: 4px 14px; font-size: 12px; font-weight: 600; color: #6b7280;
+  }
+  .panel-badge.has-results { background: #1a3a1a; color: #3fb950; }
+
+  /* ── CAP TABS ── */
+  .cap-tabs { display: flex; gap: 6px; padding: 14px 20px 6px; flex-wrap: wrap; }
+  .cap-tab {
+    background: #080b10; border: 1px solid #1e2736; border-radius: 6px;
+    color: #6b7280; padding: 6px 14px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px;
+  }
+  .cap-tab.active { background: rgba(245,166,35,0.12); border-color: #f5a623; color: #f5a623; }
+  .cap-tab:hover:not(.active) { background: #1e2736; color: #d4dbe8; }
+
+  /* ── TABLE ── */
+  .table-wrapper { overflow-x: auto; max-height: 500px; overflow-y: auto; }
+  .table-wrapper::-webkit-scrollbar { width: 5px; height: 5px; }
+  .table-wrapper::-webkit-scrollbar-track { background: #080b10; }
+  .table-wrapper::-webkit-scrollbar-thumb { background: #1e2736; border-radius: 3px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: #080b10; color: #4a5568;
+    padding: 10px 16px; text-align: left;
+    font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    border-bottom: 1px solid #1e2736;
+    position: sticky; top: 0; z-index: 1; white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid #111827; transition: background 0.1s; }
+  tbody tr:hover { background: #111827; }
+  tbody td { padding: 11px 16px; white-space: nowrap; font-size: 13px; }
+
+  .ticker {
+    color: #60a5fa; font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 14px; letter-spacing: 0.5px;
+  }
+  .name-cell { color: #9ca3af; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+  .name-near { color: #e3b341; }
+  .price-cell { color: #d4dbe8; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+  .neg { color: #f87171; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+  .pos { color: #4ade80; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+  .neu { color: #4a5568; font-family: 'JetBrains Mono', monospace; }
+  .near-ext { color: #fbbf24 !important; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+  .vol-cell { color: #6b7280; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+  .cap-pill {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    margin-right: 6px;
+  }
+  .large { background: rgba(245,166,35,0.12); color: #f5a623; }
+  .mid   { background: rgba(96,165,250,0.12); color: #60a5fa; }
+  .small { background: rgba(74,222,128,0.12); color: #4ade80; }
+  .cap-val { color: #6b7280; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .ema-above { color: #4ade80; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; }
+  .ema-below { color: #f87171; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; }
+
+  /* ── LOADING / EMPTY ── */
+  .loading-box {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 60px 20px; gap: 16px;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid #1e2736; border-top: 3px solid #f5a623;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: #4a5568; font-size: 13px; font-weight: 500; letter-spacing: 1px; }
+  .empty-msg { color: #4a5568; padding: 50px 20px; font-size: 13px; text-align: center; line-height: 2; }
+  .err-msg { color: #f87171; padding: 24px; font-size: 13px; line-height: 1.8; }
+  .err-msg a { color: #60a5fa; }
+
+  /* ── ROW HIGHLIGHT ── */
+  tr.near-row { border-left: 3px solid rgba(251,191,36,0.4); }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: #0c1018; border-top: 1px solid #1e2736;
+    padding: 12px 28px; display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 8px;
+    font-size: 12px; color: #4a5568; position: sticky; bottom: 0;
+  }
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">▸ MC <span>OPTIONS</span> SCREENER</div>
+    <div class="badge-live"><span class="dot-live"></span>LIVE</div>
+  </div>
+  <div class="topbar-right">
+    <span class="last-update" id="lastUpdate">—</span>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- API KEY -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">🔑 Configurazione API</span>
+    </div>
+    <div class="card-body">
+      <div class="api-row">
+        <span class="api-label">POLYGON KEY</span>
+        <input class="api-input" type="password" id="apiKey" placeholder="Incolla la tua chiave Polygon.io..." />
+        <button class="btn-run" id="runBtn" onclick="runScreener()">▶ RUN SCREEN</button>
+      </div>
+      <div class="api-hint">
+        Chiave gratuita su <a href="https://polygon.io" target="_blank">polygon.io</a> → Sign Up → Dashboard → API Keys &nbsp;·&nbsp; La chiave non viene salvata né trasmessa a terzi.
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">⚙ Filtri Screening</span>
+    </div>
+    <div class="card-body">
+      <div class="filters-grid">
+
+        <div class="filter-group">
+          <span class="filter-label">Variazione giorno prec.</span>
+          <div class="filter-row">
+            <span class="filter-sep">da</span>
+            <input class="filter-input" id="fDropMin" type="number" value="-10" min="-99" max="0" step="0.5" />
+            <span class="filter-sep">a</span>
+            <input class="filter-input" id="fDropMax" type="number" value="-5" min="-99" max="99" step="0.5" />
+            <span class="filter-unit">%</span>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Periodo Max / Min</span>
+          <div class="filter-row">
+            <select class="filter-select" id="fPeriod">
+              <option value="1">1 mese</option>
+              <option value="3">3 mesi</option>
+              <option value="6">6 mesi</option>
+              <option value="12" selected>12 mesi</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Vicino al Massimo</span>
+          <div class="filter-row">
+            <span class="filter-sep">≤</span>
+            <input class="filter-input" id="fNearHigh" type="number" value="5" min="0" max="100" step="0.5" />
+            <span class="filter-unit">%</span>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Vicino al Minimo</span>
+          <div class="filter-row">
+            <span class="filter-sep">≤</span>
+            <input class="filter-input" id="fNearLow" type="number" value="5" min="0" max="100" step="0.5" />
+            <span class="filter-unit">%</span>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Volume Minimo</span>
+          <div class="filter-row">
+            <input class="filter-input wide" id="fMinVol" type="number" value="500" min="0" step="100" />
+            <span class="filter-unit">K shares</span>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Market Cap Min</span>
+          <div class="filter-row">
+            <input class="filter-input wide" id="fMinCap" type="number" value="0" min="0" step="1" />
+            <span class="filter-unit">B$</span>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">EMA 14</span>
+          <div class="filter-row">
+            <select class="filter-select" id="fEma14">
+              <option value="any">Qualsiasi</option>
+              <option value="above">Prezzo &gt; EMA14</option>
+              <option value="below">Prezzo &lt; EMA14</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">EMA 200</span>
+          <div class="filter-row">
+            <select class="filter-select" id="fEma200">
+              <option value="any">Qualsiasi</option>
+              <option value="above">Prezzo &gt; EMA200</option>
+              <option value="below">Prezzo &lt; EMA200</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-reset" onclick="resetFilters()">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GEX NOTICE -->
+  <div class="gex-notice">
+    <strong>⚠ GEX (Gamma Exposure)</strong> — InsiderFinance non ha API pubblica. Consulta manualmente
+    <a href="https://insiderfinance.io" target="_blank">insiderfinance.io</a> oppure
+    <a href="https://squeezemetrics.com" target="_blank">squeezemetrics.com</a> per SPX/SPY (gratuito) dopo lo screening.
+  </div>
+
+  <!-- PROGRESS + INFO -->
+  <div class="progress-wrap" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="info-bar" id="infoBar"></div>
+
+  <!-- PANELS -->
+  <div class="panels-grid">
+
+    <!-- NASDAQ -->
+    <div class="panel-card">
+      <div class="panel-header">
+        <span class="panel-title">NASDAQ</span>
+        <span class="panel-badge" id="nasdaqCount">— titoli</span>
+      </div>
+      <div class="cap-tabs" id="nasdaqTabs">
+        <button class="cap-tab active" onclick="switchTab('nasdaq','ALL',this)">Tutti</button>
+        <button class="cap-tab" onclick="switchTab('nasdaq','LARGE',this)">Large &gt;10B</button>
+        <button class="cap-tab" onclick="switchTab('nasdaq','MID',this)">Mid 2-10B</button>
+        <button class="cap-tab" onclick="switchTab('nasdaq','SMALL',this)">Small &lt;2B</button>
+      </div>
+      <div class="table-wrapper" id="nasdaqWrapper">
+        <div class="empty-msg" id="nasdaqEmpty">Inserisci la tua API key Polygon.io<br>e premi <strong style="color:#f5a623">▶ RUN SCREEN</strong> per avviare lo screening</div>
+        <table id="nasdaqTable" style="display:none">
+          <thead><tr>
+            <th>Ticker</th><th>Azienda</th><th>Prezzo</th><th>Var %</th>
+            <th>Dist. Max</th><th>Dist. Min</th><th>EMA14</th><th>EMA200</th><th>Volume</th><th>Mkt Cap</th>
+          </tr></thead>
+          <tbody id="nasdaqBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- NYSE / SP500 -->
+    <div class="panel-card">
+      <div class="panel-header">
+        <span class="panel-title">NYSE / S&amp;P 500</span>
+        <span class="panel-badge" id="sp500Count">— titoli</span>
+      </div>
+      <div class="cap-tabs" id="sp500Tabs">
+        <button class="cap-tab active" onclick="switchTab('sp500','ALL',this)">Tutti</button>
+        <button class="cap-tab" onclick="switchTab('sp500','LARGE',this)">Large &gt;10B</button>
+        <button class="cap-tab" onclick="switchTab('sp500','MID',this)">Mid 2-10B</button>
+        <button class="cap-tab" onclick="switchTab('sp500','SMALL',this)">Small &lt;2B</button>
+      </div>
+      <div class="table-wrapper" id="sp500Wrapper">
+        <div class="empty-msg" id="sp500Empty">Inserisci la tua API key Polygon.io<br>e premi <strong style="color:#f5a623">▶ RUN SCREEN</strong> per avviare lo screening</div>
+        <table id="sp500Table" style="display:none">
+          <thead><tr>
+            <th>Ticker</th><th>Azienda</th><th>Prezzo</th><th>Var %</th>
+            <th>Dist. Max</th><th>Dist. Min</th><th>EMA14</th><th>EMA200</th><th>Volume</th><th>Mkt Cap</th>
+          </tr></thead>
+          <tbody id="sp500Body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:#f87171"></span> Calo</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#4ade80"></span> Rialzo</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#fbbf24"></span> Vicino max/min</div>
+    <div class="legend-item" style="color:#4ade80;font-size:12px">▲ sopra EMA</div>
+    <div class="legend-item" style="color:#f87171;font-size:12px">▼ sotto EMA</div>
+    <div class="legend-item"><span class="cap-pill large">LARGE</span> &gt;10B</div>
+    <div class="legend-item"><span class="cap-pill mid">MID</span> 2-10B</div>
+    <div class="legend-item"><span class="cap-pill small">SMALL</span> &lt;2B</div>
+  </div>
+  <span>Polygon.io · EOD Data · Piano Free</span>
+</div>
+
+<script>
+
+// ─── STATO ───────────────────────────────────────────────
+let nasdaqData = [], sp500Data = [];
+let nasdaqFilter = 'ALL', sp500Filter = 'ALL';
+
+// Ticker lists — NASDAQ 100 + SP500 selezionati (campione ampio)
+const NASDAQ_TICKERS = [
+  'AAPL','MSFT','NVDA','AMZN','META','GOOGL','GOOG','TSLA','AVGO','COST',
+  'NFLX','AMD','ADBE','QCOM','TMUS','TXN','INTC','INTU','AMGN','SBUX',
+  'AMAT','MU','LRCX','KLAC','MRVL','CDNS','SNPS','ORLY','ABNB','CTAS',
+  'REGN','PANW','CRWD','FTNT','TEAM','ZS','OKTA','DDOG','SNOW','PLTR',
+  'RBLX','HOOD','COIN','MSTR','ROKU','SPOT','PINS','LYFT','UBER','DASH',
+  'DOCU','ZM','TTD','SMAR','BILL','HUBS','TWLO','ESTC','MDB','CFLT',
+  'NET','GTLB','PATH','U','APPN','BRZE','MNDY','COUP','FIVN','ASAN',
+  'ADSK','ANSS','IDXX','ILMN','VRTX','BIIB','GILD','MRNA','BNTX','ALNY',
+  'SGEN','EXAS','NTRA','VEEV','DXCM','ALGN','HOLX','PODD','ISRG','MASI',
+  'CPRT','FAST','ODFL','PCAR','PAYX','VRSK','MCHP','MPWR','ENTG','ONTO'
+];
+
+const NYSE_TICKERS = [
+  'BRK.B','JPM','V','MA','UNH','JNJ','PG','HD','CVX','MRK',
+  'ABBV','KO','PEP','BAC','WMT','XOM','LLY','TMO','ABT','DHR',
+  'NEE','LIN','RTX','HON','UNP','GE','MMM','CAT','DE','BA',
+  'GS','MS','WFC','C','AXP','BLK','SCHW','USB','PNC','TFC',
+  'DIS','CMCSA','T','VZ','CHTR','FOX','FOXA','WBD','PARA','NWSA',
+  'CVS','MCK','ABC','CAH','HUM','CI','ELV','CNC','MOH','WCG',
+  'LOW','TGT','COST','WMT','DG','DLTR','KR','SFM','ACI','GO',
+  'F','GM','STLA','TM','HMC','RACE','RNO','VOW','BMW','DAI',
+  'SLB','HAL','BKR','OXY','COP','EOG','PXD','MPC','VLO','PSX',
+  'LMT','NOC','GD','L3H','TDG','HII','BWX','AXON','LDOS','SAIC',
+  'AMT','PLD','EQIX','CCI','PSA','EXR','AVB','EQR','MAA','CPT',
+  'NEM','FCX','AA','CLF','X','NUE','STLD','RS','CMC','MTX'
+];
+
+// ─── HELPERS ─────────────────────────────────────────────
+function capLabel(cap) {
+  if (!cap) return 'SMALL';
+  if (cap >= 10e9) return 'LARGE';
+  if (cap >= 2e9)  return 'MID';
+  return 'SMALL';
+}
+function capClass(l) { return l==='LARGE'?'large':l==='MID'?'mid':'small'; }
+function fmtPrice(v) { return v!=null ? '$'+Number(v).toFixed(2) : '—'; }
+function fmtPct(v) {
+  if (v===null||v===undefined) return '—';
+  return (v>0?'+':'')+Number(v).toFixed(2)+'%';
+}
+function fmtVol(v) {
+  if (!v) return '—';
+  if (v>=1e6) return (v/1e6).toFixed(1)+'M';
+  if (v>=1e3) return (v/1e3).toFixed(0)+'K';
+  return v;
+}
+function fmtCap(v) {
+  if (!v) return '—';
+  if (v>=1e12) return '$'+(v/1e12).toFixed(2)+'T';
+  if (v>=1e9)  return '$'+(v/1e9).toFixed(1)+'B';
+  return '$'+(v/1e6).toFixed(0)+'M';
+}
+
+function updateClock() {
+  const it = new Intl.DateTimeFormat('it-IT',{
+    timeZone:'Europe/Rome', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+  }).format(new Date());
+  document.getElementById('clock').textContent = it;
+}
+setInterval(updateClock,1000); updateClock();
+
+function setProgress(pct) {
+  document.getElementById('progressBar').style.display = 'block';
+  document.getElementById('progressFill').style.width = pct+'%';
+  if (pct>=100) setTimeout(()=>{document.getElementById('progressBar').style.display='none';},700);
+}
+
+function showLoading(wrapperId, emptyId, tableId) {
+  document.getElementById(emptyId).style.display = 'none';
+  document.getElementById(tableId).style.display = 'none';
+  let box = document.getElementById(wrapperId+'_spin');
+  if (!box) {
+    box = document.createElement('div'); box.id = wrapperId+'_spin';
+    box.className = 'loading-box';
+    box.innerHTML = '<div class="spinner"></div><span>FETCHING DATA...</span>';
+    document.getElementById(wrapperId).prepend(box);
+  }
+  box.style.display = 'flex';
+}
+function hideLoading(wrapperId) {
+  const b = document.getElementById(wrapperId+'_spin');
+  if (b) b.style.display = 'none';
+}
+
+function resetFilters() {
+  document.getElementById('fDropMin').value  = '-10';
+  document.getElementById('fDropMax').value  = '-5';
+  document.getElementById('fPeriod').value   = '12';
+  document.getElementById('fNearHigh').value = '5';
+  document.getElementById('fNearLow').value  = '5';
+  document.getElementById('fMinVol').value   = '500';
+  document.getElementById('fMinCap').value   = '0';
+  document.getElementById('fEma14').value    = 'any';
+  document.getElementById('fEma200').value   = 'any';
+}
+
+// ─── RENDER TABLE ─────────────────────────────────────────
+function renderTable(bodyId, tableId, emptyId, data, capFilter) {
+  const tbody = document.getElementById(bodyId);
+  const table = document.getElementById(tableId);
+  const empty = document.getElementById(emptyId);
+  const nearHighThr = Math.abs(parseFloat(document.getElementById('fNearHigh').value)||5);
+  const nearLowThr  = Math.abs(parseFloat(document.getElementById('fNearLow').value)||5);
+
+  let rows = capFilter==='ALL' ? data : data.filter(d=>capLabel(d.marketCap)===capFilter);
+
+  if (rows.length===0) {
+    table.style.display='none'; empty.style.display='block';
+    empty.innerHTML = capFilter==='ALL'
+      ? 'Nessun titolo trovato con i filtri attivi.<br>Prova in un giorno con maggiore volatilità.'
+      : 'Nessun titolo <strong style="color:#f7931a">'+capFilter+' CAP</strong> trovato.';
+    return;
+  }
+  empty.style.display='none'; table.style.display='table';
+  tbody.innerHTML='';
+
+  rows.forEach(d => {
+    const cl = capLabel(d.marketCap);
+    const nearHigh = d.distFromHigh!==null && Math.abs(d.distFromHigh)<=nearHighThr;
+    const nearLow  = d.distFromLow!==null  && Math.abs(d.distFromLow)<=nearLowThr;
+    const tr = document.createElement('tr');
+
+    if (nearHigh||nearLow) tr.classList.add('near-row');
+    const chgClass = d.changePercent > 0 ? 'pos' : 'neg';
+    const ema14cls  = d.ema14  ? (d.price > d.ema14  ? 'ema-above' : 'ema-below') : 'neu';
+    const ema200cls = d.ema200 ? (d.price > d.ema200 ? 'ema-above' : 'ema-below') : 'neu';
+    const ema14lbl  = d.ema14  ? (d.price > d.ema14  ? '▲ sopra' : '▼ sotto') : '—';
+    const ema200lbl = d.ema200 ? (d.price > d.ema200 ? '▲ sopra' : '▼ sotto') : '—';
+    tr.innerHTML = `
+      <td class="ticker">${d.symbol}</td>
+      <td class="${nearHigh||nearLow?'name-cell name-near':'name-cell'}" title="${d.name||''}">${(d.name||'').substring(0,20)}</td>
+      <td class="price-cell">${fmtPrice(d.price)}</td>
+      <td class="${chgClass}">${fmtPct(d.changePercent)}</td>
+      <td class="${nearHigh?'near-ext':'neu'}">${d.distFromHigh!==null?fmtPct(d.distFromHigh):'—'}</td>
+      <td class="${nearLow?'near-ext':'neu'}">${d.distFromLow!==null?fmtPct(d.distFromLow):'—'}</td>
+      <td class="${ema14cls}">${ema14lbl}</td>
+      <td class="${ema200cls}">${ema200lbl}</td>
+      <td class="vol-cell">${fmtVol(d.volume)}</td>
+      <td><span class="cap-pill ${capClass(cl)}">${cl}</span><span class="cap-val">${fmtCap(d.marketCap)}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function switchTab(market, cap, btn) {
+  const tabsId = market==='nasdaq'?'nasdaqTabs':'sp500Tabs';
+  document.querySelectorAll('#'+tabsId+' .cap-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  if (market==='nasdaq') { nasdaqFilter=cap; renderTable('nasdaqBody','nasdaqTable','nasdaqEmpty',nasdaqData,cap); }
+  else { sp500Filter=cap; renderTable('sp500Body','sp500Table','sp500Empty',sp500Data,cap); }
+}
+
+// ─── POLYGON API ──────────────────────────────────────────
+async function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+async function polyFetch(url, retries=2) {
+  for (let i=0;i<=retries;i++) {
+    const r = await fetch(url);
+    if (r.ok) return r.json();
+    if (r.status===429) { await sleep(12000); continue; } // rate limit: wait 12s
+    if (i===retries) throw new Error('HTTP '+r.status);
+    await sleep(1000);
+  }
+}
+
+// Calcola ultima data di trading valida
+function lastTradingDate() {
+  const now = new Date();
+  const itStr = new Intl.DateTimeFormat('it-IT', {
+    timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(now);
+  const [day, month, year] = itStr.split('/');
+  const d = new Date(Date.UTC(parseInt(year), parseInt(month)-1, parseInt(day)));
+  d.setUTCDate(d.getUTCDate() - 1);
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() - 1);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth()+1).padStart(2,'0');
+  const dd = String(d.getUTCDate()).padStart(2,'0');
+  return y + '-' + m + '-' + dd;
+}
+
+// Fetch grouped daily per data specifica
+async function fetchPrevDay(apiKey) {
+  const date = lastTradingDate();
+  console.log('Fetching date:', date);
+  const url = 'https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/' + date + '?adjusted=true&apiKey=' + apiKey;
+  const data = await polyFetch(url);
+  const map = {};
+  if (data && data.results) {
+    data.results.forEach(function(r) { map[r.T] = r; });
+  }
+  return { map: map, date: date };
+}
+
+// Calcola EMA da array di prezzi di chiusura
+function calcEMA(closes, period) {
+  if (closes.length < period) return null;
+  const k = 2 / (period + 1);
+  let ema = closes.slice(0, period).reduce((a,b)=>a+b,0) / period;
+  for (let i = period; i < closes.length; i++) {
+    ema = closes[i] * k + ema * (1 - k);
+  }
+  return ema;
+}
+
+// Fetch range high/low + EMA14 + EMA200
+async function fetchRangeHL(apiKey, ticker, months) {
+  const to   = new Date(); to.setDate(to.getDate()-1);
+  // Per EMA200 servono almeno 200 giorni di storia — prendi sempre 300 giorni
+  const from300 = new Date(to); from300.setDate(from300.getDate()-300);
+  const toStr     = to.toISOString().split('T')[0];
+  const fromStr   = from300.toISOString().split('T')[0];
+  // From per il periodo Max/Min scelto
+  const fromPeriod = new Date(to); fromPeriod.setMonth(fromPeriod.getMonth()-months);
+  const fromPeriodStr = fromPeriod.toISOString().split('T')[0];
+
+  const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${fromStr}/${toStr}?adjusted=true&sort=asc&limit=365&apiKey=${apiKey}`;
+  try {
+    const data = await polyFetch(url, 1);
+    if (!data||!data.results||data.results.length===0) return {high:null,low:null,ema14:null,ema200:null};
+    const closes = data.results.map(r=>r.c);
+    // High/Low solo nel periodo selezionato
+    const periodTs = fromPeriod.getTime();
+    const periodBars = data.results.filter(r => r.t >= periodTs);
+    const highs = periodBars.length ? periodBars.map(r=>r.h) : data.results.map(r=>r.h);
+    const lows  = periodBars.length ? periodBars.map(r=>r.l) : data.results.map(r=>r.l);
+    return {
+      high:   Math.max(...highs),
+      low:    Math.min(...lows),
+      ema14:  calcEMA(closes, 14),
+      ema200: calcEMA(closes, 200)
+    };
+  } catch(e) { return {high:null,low:null,ema14:null,ema200:null}; }
+}
+
+// Fetch ticker details (name, market cap)
+async function fetchDetails(apiKey, ticker) {
+  const url = `https://api.polygon.io/v3/reference/tickers/${ticker}?apiKey=${apiKey}`;
+  try {
+    const data = await polyFetch(url, 1);
+    if (data && data.results) return data.results;
+    return {};
+  } catch(e) { return {}; }
+}
+
+// ─── MAIN SCREENER ────────────────────────────────────────
+async function runScreener() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) { alert('Inserisci la tua API key Polygon.io prima di procedere.'); return; }
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled=true; btn.textContent='⏳ RUNNING...';
+  setProgress(3);
+
+  const dropMin  = parseFloat(document.getElementById('fDropMin').value);
+  const dropMax  = parseFloat(document.getElementById('fDropMax').value);
+  const months   = parseInt(document.getElementById('fPeriod').value)     || 12;
+  const minVol   = (parseFloat(document.getElementById('fMinVol').value)  || 0) * 1000;
+  const minCap   = (parseFloat(document.getElementById('fMinCap').value)  || 0) * 1e9;
+  const fEma14   = document.getElementById('fEma14').value;
+  const fEma200  = document.getElementById('fEma200').value;
+
+  showLoading('nasdaqWrapper','nasdaqEmpty','nasdaqTable');
+  showLoading('sp500Wrapper','sp500Empty','sp500Table');
+
+  const infoEl = document.getElementById('infoBar');
+  infoEl.style.display='block';
+  infoEl.innerHTML = '⏳ Recupero dati giorno precedente da Polygon.io...';
+
+  try {
+    // Step 1: prev day grouped
+    setProgress(10);
+    const { map: prevMap, date: tradingDate } = await fetchPrevDay(apiKey);
+    setProgress(20);
+
+    // Step 2: filter tickers by change%
+    const allTickers = [
+      ...NASDAQ_TICKERS.map(t=>({t,market:'nasdaq'})),
+      ...NYSE_TICKERS.map(t=>({t,market:'nyse'}))
+    ];
+
+    const candidates = [];
+    allTickers.forEach(({t,market}) => {
+      const d = prevMap[t];
+      if (!d) return;
+      const chg = d.c && d.o ? ((d.c - d.o) / d.o * 100) : null;
+      // Use polygon's vw (volume weighted) or calculate from open/close
+      // Better: use previous close vs day before — approximate with o/c
+      const changePercent = d.c && prevMap[t] ? chg : null;
+      if (changePercent===null) return;
+      const dMin = isNaN(dropMin) ? -10 : dropMin;
+      const dMax = isNaN(dropMax) ? -5  : dropMax;
+      if (changePercent > Math.max(dMin,dMax) || changePercent < Math.min(dMin,dMax)) return;
+      if (minVol>0 && (d.v||0)<minVol) return;
+      candidates.push({ticker:t, market, changePercent, price:d.c, volume:d.v, vw:d.vw});
+    });
+
+    setProgress(35);
+    infoEl.innerHTML = `⏳ Data: <strong style="color:#f7931a">${tradingDate}</strong> — ${candidates.length} candidati trovati — recupero dettagli e range storico...`;
+
+    // Step 3: per ogni candidato fetch details + range HL
+    // Free plan: 5 req/min → batch con delay
+    const results = [];
+    let done = 0;
+
+    for (const c of candidates) {
+      const [details, hl] = await Promise.all([
+        fetchDetails(apiKey, c.ticker),
+        fetchRangeHL(apiKey, c.ticker, months)
+      ]);
+      await sleep(300); // ~3-4 req/s safe for free tier
+
+      const mktCap = details.market_cap || null;
+      if (minCap>0 && mktCap && mktCap<minCap) { done++; continue; }
+      // Filtro EMA (applicato dopo aver calcolato le EMA)
+      if (fEma14!=='any' && hl.ema14!==null) {
+        if (fEma14==='above' && c.price <= hl.ema14) { done++; continue; }
+        if (fEma14==='below' && c.price >= hl.ema14) { done++; continue; }
+      }
+      if (fEma200!=='any' && hl.ema200!==null) {
+        if (fEma200==='above' && c.price <= hl.ema200) { done++; continue; }
+        if (fEma200==='below' && c.price >= hl.ema200) { done++; continue; }
+      }
+
+      const distFromHigh = hl.high && c.price ? ((c.price-hl.high)/hl.high*100) : null;
+      const distFromLow  = hl.low  && c.price ? ((c.price-hl.low) /hl.low *100) : null;
+
+      results.push({
+        symbol: c.ticker,
+        name: details.name || c.ticker,
+        market: c.market,
+        price: c.price,
+        changePercent: c.changePercent,
+        volume: c.volume,
+        marketCap: mktCap,
+        distFromHigh,
+        distFromLow,
+        periodHigh: hl.high,
+        periodLow: hl.low,
+        ema14:  hl.ema14,
+        ema200: hl.ema200
+      });
+
+      done++;
+      setProgress(35 + (done/candidates.length)*60);
+      infoEl.innerHTML = `⏳ Elaborazione: ${done}/${candidates.length} titoli...`;
+    }
+
+    // Split and sort
+    nasdaqData = results.filter(r=>r.market==='nasdaq').sort((a,b)=>(b.marketCap||0)-(a.marketCap||0));
+    sp500Data  = results.filter(r=>r.market==='nyse').sort((a,b)=>(b.marketCap||0)-(a.marketCap||0));
+
+    setProgress(98);
+    hideLoading('nasdaqWrapper'); hideLoading('sp500Wrapper');
+
+    const nqEl = document.getElementById('nasdaqCount');
+    nqEl.textContent = nasdaqData.length+' titoli trovati';
+    nqEl.className = nasdaqData.length>0 ? 'panel-badge has-results' : 'panel-badge';
+    const spEl = document.getElementById('sp500Count');
+    spEl.textContent = sp500Data.length+' titoli trovati';
+    spEl.className = sp500Data.length>0 ? 'panel-badge has-results' : 'panel-badge';
+
+    renderTable('nasdaqBody','nasdaqTable','nasdaqEmpty',nasdaqData,nasdaqFilter);
+    renderTable('sp500Body','sp500Table','sp500Empty',sp500Data,sp500Filter);
+
+    const now = new Intl.DateTimeFormat('it-IT',{
+      timeZone:'Europe/Rome', day:'2-digit', month:'2-digit', year:'numeric',
+      hour:'2-digit', minute:'2-digit'
+    }).format(new Date());
+    document.getElementById('lastUpdate').textContent = '↻ '+now+' IT';
+
+    const total = nasdaqData.length + sp500Data.length;
+    infoEl.innerHTML = `✅ Screen completato — <strong style="color:#f7931a">${total} titoli trovati</strong> su ${candidates.length} candidati. Periodo Max/Min: <strong style="color:#f7931a">${months} mesi</strong>.`;
+    setProgress(100);
+
+  } catch(e) {
+    hideLoading('nasdaqWrapper'); hideLoading('sp500Wrapper');
+    const errHtml = `<div class="err-msg">
+      ⚠ Errore: ${e.message}<br><br>
+      Possibili cause:<br>
+      • API key non valida — verifica su <a href="https://polygon.io/dashboard/api-keys" target="_blank" style="color:#79c0ff">polygon.io/dashboard</a><br>
+      • Rate limit superato (piano free: 5 req/min) — riprova tra 1 minuto<br>
+      • Connessione internet assente
+    </div>`;
+    document.getElementById('nasdaqEmpty').innerHTML=errHtml; document.getElementById('nasdaqEmpty').style.display='block';
+    document.getElementById('sp500Empty').innerHTML=errHtml;  document.getElementById('sp500Empty').style.display='block';
+    infoEl.innerHTML = '⚠ Errore durante lo screening — vedi dettagli nei pannelli.';
+    document.getElementById('progressBar').style.display='none';
+  }
+
+  btn.disabled=false; btn.textContent='▶ RUN SCREEN';
+}
+
+// Enter key
+document.addEventListener('keydown', e=>{
+  if (e.key==='Enter' && document.activeElement===document.getElementById('apiKey')) runScreener();
+});
+
+</script>
+</body>
+</html>
